@@ -1,0 +1,4 @@
+PUSH 10
+PUSH 5
+ADD
+OUT
