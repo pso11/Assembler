@@ -1,4 +1,3 @@
-#include <TXLib.h>
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -6,104 +5,59 @@
 #include <stdlib.h>
 
 #include "stack.h"
-
-struct command_t
-{
-    const char* name;
-    const char* str_code;
-    size_t num_arg;
-};
-
-struct command_t array[] =
-{
-    {"PUSH", "1",   1},
-    {"ADD",  "2",   0},
-    {"SUBT", "3",   0},
-    {"MULT", "4",   0},
-    {"DIV",  "5",   0},
-    {"OUT",  "6",   0},
-    {"HLT",  "7",   0},
-    {"JMP",  "8",   1},
-    {"POP",  "9",   1},
-    {"PUSH", "10",  1}
-};
-
-struct register_t
-{
-    const char* reg_name;
-    const char* reg_code_str;
-};
-
-struct register_t reg_array[] =
-{
-    {"AX", "1"},
-    {"BX", "2"},
-    {"CX", "3"},
-    {"DX", "4"}
-};
-
-char* create_file_buffer(const char* file_name, FILE* file);
-void compilation(const char* source_file, const char* destination_file, const char* bin_code_file);
-size_t define_file_size(const char* file_name);
+#include "assembler.h"
 
 int main(const int argc, const char* argv[])
 {
-    const char* code_file      = argv[1];
-    const char* byte_code_file = argv[2];
-    const char* bin_code_file  = argv[3];
-    if (argc < 2)
+    if (argc < 3)
     {
         printf("Not enough arguments\n");
         return 0;
     }
 
-    compilation(code_file, byte_code_file, bin_code_file);
+    compilation(argv[1], argv[2], argv[3]);
 
     return 0;
 }
 
-void compilation(const char* source_file, const char* destination_file, const char* destination_bin_file)
+void compilation(const char* source_code_file_name, const char* destination_byte_file, const char* destination_bin_file)
 {
-    FILE* code_file = fopen(source_file, "r");
-    char* code_buffer          = create_file_buffer(source_file, code_file);
-    char* byte_code_buffer     = (char*)calloc(define_file_size(source_file), sizeof(char));
-    int*  bin_byte_code_buffer = (int*) calloc(define_file_size(source_file), sizeof(int));
-    byte_code_buffer[0] = '\0';
-    fclose(code_file);
+    struct asm_t assembler = {};
+    assembler_init(source_code_file_name, &assembler);
 
-    int mark_array[5] = {-1, -1, -1, -1, -1};
-    char command_name[10] = {};
-    char argument[10] = {};
-    size_t code_index = 0;
-    size_t bin_code_index = 0;
-    size_t tem_increment = 0;
-
-    while (sscanf(&code_buffer[code_index], "%s%n", command_name, &tem_increment) != EOF)
+    while (sscanf(&assembler.code_buffer[assembler.code_index], "%s%n", assembler.command_name, &assembler.tem_increment) != EOF)
     {
-        code_index += tem_increment;
+        assembler.code_index += assembler.tem_increment;
 
-        for (size_t j = 0; j < sizeof(array) / sizeof(array[0]); j++)
+        if (assembler.command_name[0] == ':')
         {
-            if (!strcmp(array[j].name, command_name))
+            sscanf(&command_name[1], "%s", argument);
+            labels_array[atoi(argument) - 1] = bin_code_index;
+
+            continue;
+        }
+
+        for (size_t j = 0; j < sizeof(command_array) / sizeof(command_array[0]); j++)
+        {
+            if (!strcmp(command_array[j].name, command_name))
             {
-                if (array[j].num_arg == 0)
+                if (command_array[j].num_arg == 0)
                 {
-                    strcat(byte_code_buffer, array[j].str_code);
+                    strcat(byte_code_buffer, command_array[j].str_code);
                     strcat(byte_code_buffer, "\n");
-                    bin_byte_code_buffer[bin_code_index++] = atoi(array[j].str_code);
+                    bin_byte_code_buffer[bin_code_index++] = atoi(command_array[j].str_code);
                 }
 
-                else if (array[j].num_arg == 1)
+                else if (command_array[j].num_arg == 1)
                 {
                     sscanf(&code_buffer[code_index], "%s%n", argument, &tem_increment);
                     code_index += tem_increment;
 
-
                     if (isalpha(argument[0]))
                     {
-                        for (j = 8; j < sizeof(array) / sizeof(array[0]); j++)
+                        for (j = 7; j < sizeof(command_array) / sizeof(command_array[0]); j++)
                         {
-                            if (!strcmp(array[j].name, command_name))
+                            if (!strcmp(command_array[j].name, command_name))
                                 break;
                         }
 
@@ -114,47 +68,54 @@ void compilation(const char* source_file, const char* destination_file, const ch
                                 break;
                         }
 
-                        printf("%p %p", byte_code_buffer, array[j].str_code);
-                        strcat(byte_code_buffer, array[j].str_code);
+                        strcat(byte_code_buffer, command_array[j].str_code);
                         strcat(byte_code_buffer, " ");
-
-                        printf("%p %p", byte_code_buffer, reg_array[reg_index].reg_code_str);
                         strcat(byte_code_buffer, reg_array[reg_index].reg_code_str);
                         strcat(byte_code_buffer, "\n");
 
-                        bin_byte_code_buffer[bin_code_index++] = atoi(array[j].str_code);
+                        bin_byte_code_buffer[bin_code_index++] = atoi(command_array[j].str_code);
                         bin_byte_code_buffer[bin_code_index++] = atoi(reg_array[reg_index].reg_code_str);
 
                     }
 
-                    else
+                    else if (argument[0] == ':')
                     {
-                        printf("%p %p", byte_code_buffer, array[j].str_code);
-                        strcat(byte_code_buffer, array[j].str_code);
+                        strcat(byte_code_buffer, command_array[j].str_code);
                         strcat(byte_code_buffer, " ");
-                        printf("%p %p", byte_code_buffer, argument);
+                        sscanf(&argument[1], "%s%n", argument, &tem_increment);
+                        sprintf(argument, "%d", labels_command_array[atoi(argument) - 1]);
                         strcat(byte_code_buffer, argument);
                         strcat(byte_code_buffer, "\n");
 
-                        bin_byte_code_buffer[bin_code_index++] = atoi(array[j].str_code);
+                        bin_byte_code_buffer[bin_code_index++] = atoi(command_array[j].str_code);
+                        bin_byte_code_buffer[bin_code_index++] = atoi(argument);
+                    }
+                    else
+                    {
+                        strcat(byte_code_buffer, command_array[j].str_code);
+                        strcat(byte_code_buffer, " ");
+                        strcat(byte_code_buffer, argument);
+                        strcat(byte_code_buffer, "\n");
+
+                        bin_byte_code_buffer[bin_code_index++] = atoi(command_array[j].str_code);
                         bin_byte_code_buffer[bin_code_index++] = atoi(argument);
                     }
                 }
+
+                break;
             }
         }
     }
 
-    FILE* byte_code_file = fopen(destination_file, "w");
+    FILE* byte_code_file = fopen(destination_byte_file, "w");
     fprintf(byte_code_file, "%s", byte_code_buffer);
     fclose(byte_code_file);
 
-    FILE* bin_code_file = fopen(destination_bin_file, "wb");
+    FILE* bin_code_file = fopen(destination_byte_file, "wb");
     fwrite(bin_byte_code_buffer, sizeof(int), bin_code_index, bin_code_file);
     fclose(bin_code_file);
 
-    free(code_buffer);
-    free(byte_code_buffer);
-    free(bin_byte_code_buffer);
+    assembler_destroy(&assembler);
 }
 
 char* create_file_buffer(const char* file_name, FILE* file)
@@ -175,4 +136,32 @@ size_t define_file_size(const char* file_name)
     return buff.st_size;
 }
 
+void assembler_init(const char* source_code_file_name, struct asm_t* assembler)
+{
+    FILE* code_file = fopen(source_code_file_name, "r");
+    assembler -> code_buffer           = create_file_buffer(source_code_file_name, code_file);
+    assembler -> byte_code_buffer      = (char*)calloc(define_file_size(source_code_file_name), sizeof(char));
+    assembler -> bin_byte_code_buffer  = (int*) calloc(define_file_size(source_code_file_name), sizeof(int));
+    (assembler -> byte_code_buffer)[0] = '\0';
+    fclose(code_file);
 
+    assembler -> labels_array = (int*)calloc(LABELS_NUMBER, sizeof(int));
+    for (size_t i = 0; i < LABELS_NUMBER; i++)
+        (assembler -> labels_array)[i] = -1;
+
+    assembler -> command_name = (char*)calloc(MAX_COMMAND_LEN, sizeof(char)); MAX_ARG_LEN
+    assembler -> argument     = (char*)calloc(MAX_ARG_LEN, sizeof(char))
+    assembler -> code_index = 0;
+    assembler -> bin_code_index = 0;
+    assembler -> tem_increment = 0;
+}
+
+void assembler_destroy(struct asm_t* assembler)
+{
+    free(assembler -> code_buffer);
+    free(assembler -> byte_code_buffer);
+    free(assembler -> bin_byte_code_buffer);
+    free(assembler -> labels_array);
+    free(assembler -> command_name);
+    free(assembler -> argument);
+}
