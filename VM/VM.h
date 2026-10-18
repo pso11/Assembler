@@ -1,6 +1,7 @@
 struct processor_t
 {
-    struct stack_t stk;
+    struct stack_t data_stk;
+    struct stack_t pointers_stk;
     size_t stack_capacity;
     stack_elem_t argument_value;
     stack_elem_t operand_1;
@@ -12,8 +13,8 @@ struct processor_t
 
 #define ACCURACY 10
 #define REGISTER_NUMBER 4
+#define STACK_CAPACITY 10
 
-void processor_init(struct processor_t* processor);
 void processor_push(struct processor_t* processor);
 void processor_add(struct processor_t* processor);
 void processor_subt(struct processor_t* processor);
@@ -31,6 +32,11 @@ void processor_je(struct processor_t* processor);
 void processor_jne(struct processor_t* processor);
 void processor_hlt(struct processor_t* processor);
 void processor_work(struct processor_t* processor);
+void processor_in(struct processor_t* processor);
+void processor_call(struct processor_t* processor);
+void processor_ret(struct processor_t* processor);
+
+void processor_init(struct processor_t* processor);
 int* create_file_buffer(const char* file_name);
 size_t define_file_size(const char* file_name);
 
