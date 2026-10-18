@@ -27,9 +27,11 @@ int* create_file_buffer(const char* file_name)
 
 void processor_init(struct processor_t* processor)
 {
-    processor -> stack_capacity = 10;
-    processor -> stk = {};
-    stack_init(&(processor -> stk), processor -> stack_capacity);
+    processor -> stack_capacity = STACK_CAPACITY;
+    processor -> pointers_stk = {};
+    processor -> data_stk = {};
+    stack_init(&(processor -> pointers_stk), processor -> stack_capacity);
+    stack_init(&(processor -> data_stk), processor -> stack_capacity);
 
     processor -> reg_array = (stack_elem_t*)calloc(REGISTER_NUMBER, sizeof(stack_elem_t));
 
@@ -42,40 +44,40 @@ void processor_init(struct processor_t* processor)
 void processor_push(struct processor_t* processor)
 {
     processor -> argument_value = (processor -> byte_code_buffer)[processor -> IP++];
-    stack_push(&(processor -> stk), (processor -> argument_value) * ACCURACY);
+    stack_push(&(processor -> data_stk), (processor -> argument_value) * ACCURACY);
 }
 
 void processor_add(struct processor_t* processor)
 {
-    stack_pop(&(processor -> stk), &(processor -> operand_1));
-    stack_pop(&(processor -> stk), &(processor -> operand_2));
-    stack_push(&(processor -> stk), (processor -> operand_1) + (processor -> operand_2));
+    stack_pop(&(processor -> data_stk), &(processor -> operand_1));
+    stack_pop(&(processor -> data_stk), &(processor -> operand_2));
+    stack_push(&(processor -> data_stk), (processor -> operand_1) + (processor -> operand_2));
 }
 
 void processor_subt(struct processor_t* processor)
 {
-    stack_pop(&(processor -> stk), &(processor -> operand_1));
-    stack_pop(&(processor -> stk), &(processor -> operand_2));
-    stack_push(&(processor -> stk), (processor -> operand_2) - (processor -> operand_1));
+    stack_pop(&(processor -> data_stk), &(processor -> operand_1));
+    stack_pop(&(processor -> data_stk), &(processor -> operand_2));
+    stack_push(&(processor -> data_stk), (processor -> operand_2) - (processor -> operand_1));
 }
 
 void processor_mult(struct processor_t* processor)
 {
-    stack_pop(&(processor -> stk), &(processor -> operand_1));
-    stack_pop(&(processor -> stk), &(processor -> operand_2));
-    stack_push(&(processor -> stk), ((processor -> operand_2) * (processor -> operand_1)) / ACCURACY);
+    stack_pop(&(processor -> data_stk), &(processor -> operand_1));
+    stack_pop(&(processor -> data_stk), &(processor -> operand_2));
+    stack_push(&(processor -> data_stk), ((processor -> operand_2) * (processor -> operand_1)) / ACCURACY);
 }
 
 void processor_div(struct processor_t* processor)
 {
-    stack_pop(&(processor -> stk), &(processor -> operand_1));
-    stack_pop(&(processor -> stk), &(processor -> operand_2));
-    stack_push(&(processor -> stk), (stack_elem_t)(((double)(processor -> operand_2) / (double)(processor -> operand_1)) * ACCURACY));
+    stack_pop(&(processor -> data_stk), &(processor -> operand_1));
+    stack_pop(&(processor -> data_stk), &(processor -> operand_2));
+    stack_push(&(processor -> data_stk), (stack_elem_t)(((double)(processor -> operand_2) / (double)(processor -> operand_1)) * ACCURACY));
 }
 
 void processor_out(struct processor_t* processor)
 {
-    stack_pop(&(processor -> stk), &(processor -> operand_1));
+    stack_pop(&(processor -> data_stk), &(processor -> operand_1));
     printf("%lg\n", ((double)(processor -> operand_1) / ACCURACY));
 }
 
@@ -83,7 +85,8 @@ void processor_destroy(struct processor_t* processor)
 {
     free(processor -> byte_code_buffer);
     free(processor -> reg_array);
-    free(&(processor -> stk));
+    free(&(processor -> data_stk));
+    free(&(processor -> pointers_stk));
 }
 
 void processor_jmp(struct processor_t* processor)
@@ -94,13 +97,13 @@ void processor_jmp(struct processor_t* processor)
 void processor_push_reg(struct processor_t* processor)
 {
     processor -> argument_value = (processor -> byte_code_buffer)[processor -> IP++];
-    stack_push(&(processor -> stk), (processor -> reg_array)[(processor -> argument_value) - 1]);
+    stack_push(&(processor -> data_stk), (processor -> reg_array)[(processor -> argument_value) - 1]);
 }
 
 void processor_pop_reg(struct processor_t* processor)
 {
     processor -> argument_value = (processor -> byte_code_buffer)[processor -> IP++];
-    stack_pop(&(processor -> stk), &(processor -> operand_1));
+    stack_pop(&(processor -> data_stk), &(processor -> operand_1));
     *((processor -> reg_array) + (processor -> argument_value) - 1) = processor -> operand_1;
 }
 
@@ -113,42 +116,52 @@ size_t define_file_size(const char* file_name)
 
 void processor_jae(struct processor_t* processor)
 {
-    stack_pop(&(processor -> stk), &(processor -> operand_1));
-    stack_pop(&(processor -> stk), &(processor -> operand_2));
-    if ((processor -> operand_2) >= processor -> operand_1)
+    stack_pop(&(processor -> data_stk), &(processor -> operand_1));
+    stack_pop(&(processor -> data_stk), &(processor -> operand_2));
+    if ((processor -> operand_2) >= (processor -> operand_1))
         processor_jmp(processor);
+    else
+        processor -> IP++;
 }
 
 void processor_jb(struct processor_t* processor)
 {
-    stack_pop(&(processor -> stk), &(processor -> operand_1));
-    stack_pop(&(processor -> stk), &(processor -> operand_2));
+    stack_pop(&(processor -> data_stk), &(processor -> operand_1));
+    stack_pop(&(processor -> data_stk), &(processor -> operand_2));
     if ((processor -> operand_2) < (processor -> operand_1))
         processor_jmp(processor);
+    else
+        processor -> IP++;
 }
 
 void processor_jbe(struct processor_t* processor)
 {
-    stack_pop(&(processor -> stk), &(processor -> operand_1));
-    stack_pop(&(processor -> stk), &(processor -> operand_2));
+    stack_pop(&(processor -> data_stk), &(processor -> operand_1));
+    stack_pop(&(processor -> data_stk), &(processor -> operand_2));
     if ((processor -> operand_2) <= (processor -> operand_1))
         processor_jmp(processor);
+    else
+        processor -> IP++;
 }
 
 void processor_je(struct processor_t* processor)
 {
-    stack_pop(&(processor -> stk), &(processor -> operand_1));
-    stack_pop(&(processor -> stk), &(processor -> operand_2));
+    stack_pop(&(processor -> data_stk), &(processor -> operand_1));
+    stack_pop(&(processor -> data_stk), &(processor -> operand_2));
     if ((processor -> operand_2) == (processor -> operand_1))
         processor_jmp(processor);
+    else
+        processor -> IP++;
 }
 
 void processor_jne(struct processor_t* processor)
 {
-    stack_pop(&(processor -> stk), &(processor -> operand_1));
-    stack_pop(&(processor -> stk), &(processor -> operand_2));
+    stack_pop(&(processor -> data_stk), &(processor -> operand_1));
+    stack_pop(&(processor -> data_stk), &(processor -> operand_2));
     if ((processor -> operand_2) != (processor -> operand_1))
         processor_jmp(processor);
+    else
+        processor -> IP++;
 }
 
 
@@ -161,5 +174,26 @@ void processor_hlt(struct processor_t* processor)
 void processor_work(struct processor_t* processor)
 {
     while (processor -> byte_code_buffer[processor -> IP] != HLT)
-        function_array[processor -> byte_code_buffer[(processor -> IP)++] - 1](processor);
+    {
+        function_array[processor -> byte_code_buffer[processor -> IP++] - 1](processor);
+    }
+}
+
+void processor_in(struct processor_t* processor)
+{
+    printf("Enter number: ");
+    scanf("%d", &(processor -> argument_value));
+    stack_push(&(processor -> data_stk), (processor -> argument_value) * ACCURACY);
+}
+
+void processor_call(struct processor_t* processor)
+{
+    stack_push(&(processor -> pointers_stk), processor -> IP + 1);
+    processor -> IP = (processor -> byte_code_buffer)[processor -> IP];
+}
+
+void processor_ret(struct processor_t* processor)
+{
+    stack_pop(&(processor -> pointers_stk), &(processor -> operand_1));
+    processor -> IP = processor -> operand_1;
 }
