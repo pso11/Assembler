@@ -1,0 +1,18 @@
+void (*function_array[])(struct processor_t* processor) =
+    {
+        &processor_push,
+        &processor_add,
+        &processor_subt,
+        &processor_mult,
+        &processor_div,
+        &processor_out,
+        &processor_hlt,
+        &processor_jmp,
+        &processor_jae,
+        &processor_jb,
+        &processor_jbe,
+        &processor_je,
+        &processor_jne,
+        &processor_pop_reg,
+        &processor_push_reg
+    };
