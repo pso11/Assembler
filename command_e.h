@@ -14,5 +14,6 @@ enum command_code_t
     JE     = 12,
     JNE    = 13,
     POP_R  = 14,
-    PUSH_R = 15
+    PUSH_R = 15,
+    IN     = 16
 };
