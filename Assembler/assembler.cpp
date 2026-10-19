@@ -122,7 +122,10 @@ void assembler_first_pass(struct asm_t* assembler)
                 {
                     sscanf(&assembler -> code_buffer[code_index], "%s%n", argument, &tem_increment);
                     code_index += tem_increment;
-                    bin_code_index++;;
+                    if (command_idx == 0 || command_idx == 13)
+                        bin_code_index += 2;
+                    else
+                        bin_code_index++;
                 }
 
                 break;
