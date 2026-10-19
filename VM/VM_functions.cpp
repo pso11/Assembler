@@ -114,6 +114,17 @@ size_t define_file_size(const char* file_name)
     return buff.st_size;
 }
 
+void processor_ja(struct processor_t* processor)
+{
+    printf("Hi");
+    stack_pop(&(processor -> data_stk), &(processor -> operand_1));
+    stack_pop(&(processor -> data_stk), &(processor -> operand_2));
+    if ((processor -> operand_2) > (processor -> operand_1))
+        processor_jmp(processor);
+    else
+        processor -> IP++;
+}
+
 void processor_jae(struct processor_t* processor)
 {
     stack_pop(&(processor -> data_stk), &(processor -> operand_1));
@@ -173,7 +184,7 @@ void processor_hlt(struct processor_t* processor)
 
 void processor_work(struct processor_t* processor)
 {
-    while (processor -> byte_code_buffer[processor -> IP] != HLT)
+    while (processor -> byte_code_buffer[processor -> IP] != 7)
     {
         function_array[processor -> byte_code_buffer[processor -> IP++] - 1](processor);
     }
@@ -196,4 +207,11 @@ void processor_ret(struct processor_t* processor)
 {
     stack_pop(&(processor -> pointers_stk), &(processor -> operand_1));
     processor -> IP = processor -> operand_1;
+}
+
+
+void processor_sqrt(struct processor_t* processor)
+{
+    stack_pop(&(processor -> data_stk), &(processor -> operand_1));
+    stack_push(&(processor -> data_stk), (stack_elem_t)(sqrt((double)(processor -> operand_1 / ACCURACY)) * ACCURACY));
 }

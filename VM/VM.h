@@ -11,8 +11,8 @@ struct processor_t
     stack_elem_t* reg_array;
 };
 
-#define ACCURACY 10
-#define REGISTER_NUMBER 4
+#define ACCURACY 100
+#define REGISTER_NUMBER 5
 #define STACK_CAPACITY 10
 
 void processor_push(struct processor_t* processor);
@@ -35,6 +35,8 @@ void processor_work(struct processor_t* processor);
 void processor_in(struct processor_t* processor);
 void processor_call(struct processor_t* processor);
 void processor_ret(struct processor_t* processor);
+void processor_sqrt(struct processor_t* processor);
+void processor_ja(struct processor_t* processor);
 
 void processor_init(struct processor_t* processor);
 int* create_file_buffer(const char* file_name);

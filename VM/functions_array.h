@@ -17,5 +17,7 @@ void (*function_array[])(struct processor_t* processor) =
     &processor_push_reg,
     &processor_in,
     &processor_call,
-    &processor_ret
+    &processor_ret,
+    &processor_sqrt,
+    &processor_ja
 };
