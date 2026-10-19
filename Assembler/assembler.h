@@ -21,12 +21,11 @@ struct command_t command_array[] =
     {"JE",   "12",  1},
     {"JNE",  "13",  1},
     {"POP",  "14",  1},
-    {"PUSH", "15",  1},
-    {"IN",   "16",  0},
-    {"CALL", "17",  1},
-    {"RET",  "18",  0},
-    {"SQRT", "19",  0},
-    {"JA",   "20",  1}
+    {"IN",   "15",  0},
+    {"CALL", "16",  1},
+    {"RET",  "17",  0},
+    {"SQRT", "18",  0},
+    {"JA",   "19",  1}
 };
 
 struct register_t
@@ -51,14 +50,17 @@ struct asm_t
     int*   bin_byte_code_buffer;
     int*   labels_array;
     size_t bin_code_index;
+    size_t reg_index;
+    char* argument;
+    size_t command_idx;
 };
 
 #define LABELS_NUMBER   20
 #define MAX_COMMAND_LEN 10
 #define MAX_ARG_LEN     10
-#define ZERO_ARGS command_array[command_idx].num_arg == 0
-#define ONE_ARG   command_array[command_idx].num_arg == 1
-#define LABLE_ARG argument[0] == ':'
+#define ZERO_ARGS command_array[assembler -> command_idx].num_arg == 0
+#define ONE_ARG   command_array[assembler -> command_idx].num_arg == 1
+#define LABLE_ARG (assembler -> argument)[0] == ':'
 
 char* create_file_buffer(const char* file_name, FILE* file);
 void compilation(struct asm_t* assembler);
@@ -70,3 +72,8 @@ void fill_byte_code_file(struct asm_t* assembler, const char* byte_dile);
 void fill_bin_byte_code_file(struct asm_t* assembler, const char* bin_byte_dile);
 void assembler_first_pass(struct asm_t* assembler);
 void assembler_second_pass(struct asm_t* assembler);
+void fwrite_if_alpha(struct asm_t* assembler, const char* type_name);
+void fwrite_if_digit(struct asm_t* assembler, const char* type_name);
+void fwrite_if_label(struct asm_t* assembler);
+void find_register(struct asm_t* assembler);
+void fwrite_if_zero_args(struct asm_t* assembler);
