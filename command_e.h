@@ -15,5 +15,9 @@ enum command_code_t
     JNE    = 13,
     POP_R  = 14,
     PUSH_R = 15,
-    IN     = 16
+    IN     = 16,
+    CALL   = 17,
+    RET    = 18,
+    SQRT   = 19,
+    JA     = 20
 };
