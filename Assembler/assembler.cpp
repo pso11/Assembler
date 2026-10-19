@@ -67,6 +67,8 @@ void assembler_init(const char* source_code_file_name, struct asm_t* assembler)
         (assembler -> labels_array)[i] = -1;
 
     assembler -> bin_code_index = 0;
+    assembler -> reg_index      = 0;
+    assembler -> argument       = (char*)calloc(MAX_ARG_LEN, sizeof(char));
 }
 
 void assembler_destroy(struct asm_t* assembler)
@@ -132,15 +134,14 @@ void assembler_second_pass(struct asm_t* assembler)
     size_t code_index = 0;
     size_t tem_increment = 0;
     char command_name[MAX_COMMAND_LEN] = {};
-    char argument[MAX_ARG_LEN] = {};
     while (sscanf(&assembler -> code_buffer[code_index], "%s%n", command_name, &tem_increment) != EOF)
     {
         code_index += tem_increment;
 
         if (command_name[0] == ':')
         {
-            sscanf(&command_name[1], "%s", argument);
-            assembler -> labels_array[atoi(argument) - 1] = assembler -> bin_code_index;
+            sscanf(&command_name[1], "%s", assembler -> argument);
+            assembler -> labels_array[atoi(assembler -> argument) - 1] = assembler -> bin_code_index;
 
             continue;
         }
@@ -150,64 +151,43 @@ void assembler_second_pass(struct asm_t* assembler)
             if (!strcmp(command_array[command_idx].name, command_name))
             {
                 if (ZERO_ARGS)
-                {
-                    strcat(assembler -> byte_code_buffer, command_array[command_idx].str_code);
-                    strcat(assembler -> byte_code_buffer, "\n");
-                    assembler -> bin_byte_code_buffer[assembler -> bin_code_index++] = atoi(command_array[command_idx].str_code);
-                }
+                    fwrite_if_zero_args(assembler, &command_idx);
 
                 else if (ONE_ARG)
                 {
-                    sscanf(&assembler -> code_buffer[code_index], "%s%n", argument, &tem_increment);
+                    sscanf(&assembler -> code_buffer[code_index], "%s%n", assembler -> argument, &tem_increment);
                     code_index += tem_increment;
 
-                    if (isalpha(argument[0]))
+                    if ((assembler -> argument)[0] == '[')
                     {
-                        for (command_idx = 7; command_idx < sizeof(command_array) / sizeof(command_array[0]); command_idx++)
+                        printf("<Hi> ");
+                        sscanf(assembler -> argument, "[%[^]]", assembler -> argument);
+                        if (isalpha((assembler -> argument)[0]))
                         {
-                            if (!strcmp(command_array[command_idx].name, command_name))
-                                break;
+                            printf("<<Hi>> ");
+                            find_command(&command_idx, command_name, 20);
+                            find_register(assembler);
+                            fwrite_if_alpha(assembler, command_idx);
+                            printf("||Hi>> ");
                         }
-
-                        size_t reg_index = 0;
-                        for (; reg_index < sizeof(reg_array) / sizeof(reg_array[0]); reg_index++)
+                        else
                         {
-                            if (!strcmp(reg_array[reg_index].reg_name, argument))
-                                break;
+                            find_command(&command_idx, command_name, 20);
+                            fwrite_if_digit(assembler, command_idx);
                         }
+                    }
 
-                        strcat(assembler -> byte_code_buffer, command_array[command_idx].str_code);
-                        strcat(assembler -> byte_code_buffer, " ");
-                        strcat(assembler -> byte_code_buffer, reg_array[reg_index].reg_code_str);
-                        strcat(assembler -> byte_code_buffer, "\n");
-
-                        assembler -> bin_byte_code_buffer[assembler -> bin_code_index++] = atoi(command_array[command_idx].str_code);
-                        assembler -> bin_byte_code_buffer[assembler -> bin_code_index++] = atoi(reg_array[reg_index].reg_code_str);
-
+                    else if (isalpha((assembler -> argument)[0]))
+                    {
+                        find_command(&command_idx, command_name, 7);
+                        find_register(assembler);
+                        fwrite_if_alpha(assembler, command_idx);
                     }
 
                     else if (LABLE_ARG)
-                    {
-                        strcat(assembler -> byte_code_buffer, command_array[command_idx].str_code);
-                        strcat(assembler -> byte_code_buffer, " ");
-                        sscanf(&argument[1], "%s%n", argument, &tem_increment);
-                        sprintf(argument, "%d", assembler -> labels_array[atoi(argument) - 1]);
-                        strcat(assembler -> byte_code_buffer, argument);
-                        strcat(assembler -> byte_code_buffer, "\n");
-
-                        assembler -> bin_byte_code_buffer[assembler -> bin_code_index++] = atoi(command_array[command_idx].str_code);
-                        assembler -> bin_byte_code_buffer[assembler -> bin_code_index++] = atoi(argument);
-                    }
+                        fwrite_if_label(assembler, command_idx);
                     else
-                    {
-                        strcat(assembler -> byte_code_buffer, command_array[command_idx].str_code);
-                        strcat(assembler -> byte_code_buffer, " ");
-                        strcat(assembler -> byte_code_buffer, argument);
-                        strcat(assembler -> byte_code_buffer, "\n");
-
-                        assembler -> bin_byte_code_buffer[assembler -> bin_code_index++] = atoi(command_array[command_idx].str_code);
-                        assembler -> bin_byte_code_buffer[assembler -> bin_code_index++] = atoi(argument);
-                    }
+                        fwrite_if_digit(assembler, command_idx);
                 }
 
                 break;
@@ -215,4 +195,64 @@ void assembler_second_pass(struct asm_t* assembler)
         }
     }
 
+}
+
+void fwrite_if_alpha(struct asm_t* assembler, size_t command_idx)
+{
+    strcat(assembler -> byte_code_buffer, command_array[command_idx].str_code);
+    strcat(assembler -> byte_code_buffer, " ");
+    strcat(assembler -> byte_code_buffer, reg_array[assembler -> reg_index].reg_code_str);
+    strcat(assembler -> byte_code_buffer, "\n");
+
+    assembler -> bin_byte_code_buffer[assembler -> bin_code_index++] = atoi(command_array[command_idx].str_code);
+    assembler -> bin_byte_code_buffer[assembler -> bin_code_index++] = atoi(reg_array[assembler -> reg_index].reg_code_str);
+}
+
+void fwrite_if_digit(struct asm_t* assembler, size_t command_idx)
+{
+    strcat(assembler -> byte_code_buffer, command_array[command_idx].str_code);
+    strcat(assembler -> byte_code_buffer, " ");
+    strcat(assembler -> byte_code_buffer, assembler -> argument);
+    strcat(assembler -> byte_code_buffer, "\n");
+
+    assembler -> bin_byte_code_buffer[assembler -> bin_code_index++] = atoi(command_array[command_idx].str_code);
+    assembler -> bin_byte_code_buffer[assembler -> bin_code_index++] = atoi(assembler -> argument);
+}
+
+void fwrite_if_label(struct asm_t* assembler, size_t command_idx)
+{
+    strcat(assembler -> byte_code_buffer, command_array[command_idx].str_code);
+    strcat(assembler -> byte_code_buffer, " ");
+    sscanf(&(assembler -> argument)[1], "%s", assembler -> argument);
+    sprintf(assembler -> argument, "%d", assembler -> labels_array[atoi(assembler -> argument) - 1]);
+    strcat(assembler -> byte_code_buffer, assembler -> argument);
+    strcat(assembler -> byte_code_buffer, "\n");
+
+    assembler -> bin_byte_code_buffer[assembler -> bin_code_index++] = atoi(command_array[command_idx].str_code);
+    assembler -> bin_byte_code_buffer[assembler -> bin_code_index++] = atoi(assembler -> argument);
+}
+
+void find_command(size_t* command_idx, char* command_name, size_t start_point)
+{
+    for (*command_idx = start_point; *command_idx < sizeof(command_array) / sizeof(command_array[0]); (*command_idx)++)
+    {
+        if (!strcmp(command_array[*command_idx].name, command_name))
+            break;
+    }
+}
+
+void find_register(struct asm_t* assembler)
+{
+    for (assembler -> reg_index = 0; (assembler -> reg_index) < sizeof(reg_array) / sizeof(reg_array[0]); (assembler -> reg_index)++)
+    {
+        if (!strcmp(reg_array[(assembler -> reg_index) ].reg_name, assembler -> argument))
+            break;
+    }
+}
+
+void fwrite_if_zero_args(struct asm_t* assembler, size_t* command_idx)
+{
+    strcat(assembler -> byte_code_buffer, command_array[*command_idx].str_code);
+    strcat(assembler -> byte_code_buffer, "\n");
+    assembler -> bin_byte_code_buffer[assembler -> bin_code_index++] = atoi(command_array[*command_idx].str_code);
 }
