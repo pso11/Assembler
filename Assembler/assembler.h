@@ -24,7 +24,9 @@ struct command_t command_array[] =
     {"PUSH", "15",  1},
     {"IN",   "16",  0},
     {"CALL", "17",  1},
-    {"RET",  "18",  0}
+    {"RET",  "18",  0},
+    {"SQRT", "19",  0},
+    {"JA",   "20",  1}
 };
 
 struct register_t
@@ -38,7 +40,8 @@ struct register_t reg_array[] =
     {"AX", "1"},
     {"BX", "2"},
     {"CX", "3"},
-    {"DX", "4"}
+    {"DX", "4"},
+    {"FX", "5"}
 };
 
 struct asm_t
@@ -50,7 +53,7 @@ struct asm_t
     size_t bin_code_index;
 };
 
-#define LABELS_NUMBER   10
+#define LABELS_NUMBER   20
 #define MAX_COMMAND_LEN 10
 #define MAX_ARG_LEN     10
 #define ZERO_ARGS command_array[command_idx].num_arg == 0

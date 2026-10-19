@@ -1,3 +1,4 @@
+#include <TXLib.h>
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -77,14 +78,14 @@ void assembler_destroy(struct asm_t* assembler)
 
 void fill_byte_code_file(struct asm_t* assembler, const char* byte_dile)
 {
-    FILE* byte_code_file = fopen(byte_dile, "w");
+    FILE* byte_code_file = fopen(byte_dile, "w+");
     fprintf(byte_code_file, "%s", assembler -> byte_code_buffer);
     fclose(byte_code_file);
 }
 
 void fill_bin_byte_code_file(struct asm_t* assembler, const char* bin_byte_dile)
 {
-    FILE* bin_code_file = fopen(bin_byte_dile, "wb");
+    FILE* bin_code_file = fopen(bin_byte_dile, "wb+");
     fwrite(assembler -> bin_byte_code_buffer, sizeof(int), assembler -> bin_code_index, bin_code_file);
     fclose(bin_code_file);
 }
